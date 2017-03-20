@@ -1,0 +1,395 @@
+swagger: '2.0'
+info:
+  description: Core API specification for an Epic Armageddon battle result tracker
+  version: 0.0.1
+  title: EpicA Battle Stats
+  contact:
+    email: contact@net-armageddon.org
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+host: ea-battles.appspot.com
+basePath: /api/v1
+tags:
+  - name: player
+    description: Operations to manage players
+  - name: list
+    description: Operations to manage army lists
+  - name: meta
+    description: 'Operations to manage tournaments, local metas, gaming groups etc'
+schemes:
+  - https
+paths:
+  /player:
+    post:
+      tags:
+        - player
+      summary: Create a player
+      description: >-
+        Create a record for a player that is not already represented in the
+        system
+      operationId: addPlayer
+      consumes:
+        - application/json
+        - application/xml
+      produces:
+        - application/xml
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: Player object that needs to be added
+          required: true
+          schema:
+            $ref: '#/definitions/Player'
+      responses:
+        '405':
+          description: Invalid input
+      security:
+        - netea_auth:
+            - 'write:player'
+            - 'read:player'
+  /player/findByEmail:
+    get:
+      tags:
+        - player
+      summary: Finds players by their email address
+#      description:
+      operationId: findPlayerByEmail
+      produces:
+        - application/xml
+        - application/json
+      parameters:
+        - name: email
+          in: query
+          description: Email address to query with
+          required: true
+          type: string
+          format: email
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Player'
+        '400':
+          description: Invalid status value
+      security:
+        - netea_auth:
+            - 'write:player'
+            - 'read:player'
+  /player/findByHandle:
+    post:
+      tags:
+        - player
+      summary: Finds Players by their online handle
+      description: >-
+        TODO: input likely would specify handle and the context
+        (e.g. Tactical Command, WargamerAU)
+      operationId: findPlayerByHandle
+      produces:
+        - application/xml
+        - application/json
+      parameters:
+        - name: handle
+          in: body
+          description: Handle to filter by
+          required: true
+          schema:
+            $ref: '#/definitions/Handle'
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Player'
+        '400':
+          description: Invalid tag value
+      security:
+        - netea_auth:
+            - 'write:player'
+            - 'read:player'
+      deprecated: true
+
+  '/player/{playerId}':
+    get:
+      tags:
+        - player
+      summary: Retrieve a player record from its URI
+      description: Returns a single player
+      operationId: getPlayerById
+      produces:
+        - application/xml
+        - application/json
+      parameters:
+        - name: playerId
+          in: path
+          description: Player ID to retrieve
+          required: true
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/Player'
+        '404':
+          description: Player not found
+      security:
+        - api_key: []
+    post:
+      tags:
+        - player
+      summary: Update an existing player
+      description: >-
+        Update the details of an existing player, as identified by the request
+        URI
+      operationId: updatePlayer
+      consumes:
+        - application/json
+        - application/xml
+      produces:
+        - application/xml
+        - application/json
+      parameters:
+        - in: path
+          name: playerId
+          description: Player ID to update
+          required: true
+          type: string
+          format: uuid
+        - in: body
+          name: body
+          description: Player object that needs to be stored
+          required: true
+          schema:
+            $ref: '#/definitions/Player'
+      responses:
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Player not found
+        '405':
+          description: Validation exception
+      security:
+        - netea_auth:
+            - 'write:player'
+            - 'read:player'
+    delete:
+      tags:
+        - player
+      summary: Deletes a player
+      description: ''
+      operationId: deletePlayer
+      produces:
+        - application/xml
+        - application/json
+      parameters:
+        - name: api_key
+          in: header
+          required: false
+          type: string
+        - name: playerId
+          in: path
+          description: Player ID to delete
+          required: true
+          type: string
+          format: uuid
+      responses:
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Player not found
+      security:
+        - netea_auth:
+            - 'write:player'
+            - 'read:player'
+
+  '/list/{listId}':
+    get:
+      tags:
+        - list
+      summary: Retrieve a list from its URI
+      description: Returns a single army list
+      operationId: getListById
+      produces:
+        - application/xml
+        - application/json
+      parameters:
+        - name: listId
+          in: path
+          description: List ID to retrieve
+          required: true
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/List'
+        '404':
+          description: List not found
+      security:
+        - api_key: []
+
+    delete:
+      tags:
+        - list
+      summary: Delete a list for a given player
+      operationId: deleteList
+      produces:
+        - application/xml
+        - application/json
+      parameters:
+        - name: listId
+          in: path
+          description: List ID to retrieve
+          required: true
+          type: string
+          format: uuid
+      responses:
+        '400':
+          description: Invalid list ID supplied
+        '404':
+          description: List not found
+        '405':
+          description: Validation exception
+      security:
+        - netea_auth:
+            - 'write:list'
+
+  '/player/{playerId}/list':
+    put:
+      tags:
+        - list
+      summary: Add a list for a given player
+      operationId: addList
+      produces:
+        - application/xml
+        - application/json
+      parameters:
+        - name: playerId
+          in: path
+          description: Player ID to associate with the list
+          required: true
+          type: string
+          format: uuid
+        - name: tournamentId
+          in: query
+          description: Tournament ID to associate with the list
+          required: false
+          type: string
+          format: uuid
+      responses:
+        '400':
+          description: Invalid player ID supplied
+        '404':
+          description: Player not found
+        '405':
+          description: Validation exception
+      security:
+        - netea_auth:
+            - 'write:list'
+    get:
+      tags:
+        - list
+      summary: Retrieve list(s) for a given player
+      operationId: findListsForPlayer
+      produces:
+        - application/xml
+        - application/json
+      parameters:
+        - name: playerId
+          in: path
+          description: Player ID to search with the list
+          required: true
+          type: string
+          format: uuid
+        - name: tournamentId
+          in: query
+          description: Tournament ID to filter by
+          required: false
+          type: string
+          format: uuid
+      responses:
+        '400':
+          description: Invalid player ID supplied
+        '404':
+          description: Player not found
+        '405':
+          description: Validation exception
+
+securityDefinitions:
+  netea_auth:
+    type: oauth2
+    authorizationUrl: 'http://net-armageddon.org/oauth/dialog'
+    flow: implicit
+    scopes:
+      'write:list': Modify the army lists associated with your player
+      'write:player': Modify your player info (e.g. forum handles)
+      'read:player': Read your player info (e.g. so tournament organisers can identify you)
+  api_key:
+    type: apiKey
+    name: api_key
+    in: header
+definitions:
+  Player:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+      handles:
+        type: array
+        items:
+          $ref: '#/definitions/Handle'
+      firstName:
+        type: string
+      lastName:
+        type: string
+      email:
+        type: string
+    xml:
+      name: Player
+  Handle:
+    type: object
+    properties:
+      context:
+        type: string
+      handle:
+        type: string
+    xml:
+      name: Handle
+  List:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+      race:
+        type: string
+      army:
+        type: string
+      category:
+        type: string
+        enum:
+          - NetEA
+          - EpicUK
+          - EpicAU
+          - FERC
+          - GW
+          - Minigeddon
+      version:
+        type: string
+      points:
+        type: integer
+      body:
+        type: string
+    xml:
+      name: List
+
+externalDocs:
+  description: Find out more about Swagger
+  url: 'http://swagger.io'
